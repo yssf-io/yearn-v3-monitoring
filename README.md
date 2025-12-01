@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Yearn V3 Vault Monitoring Dashboard
+
+A modern, single-page dashboard to monitor Yearn V3 vaults across multiple chains (Base, Ethereum, Arbitrum, Polygon). Built with Next.js 14, TypeScript, and shadcn/ui.
+
+## Features
+
+- **Multi-Chain Support**: Monitor vaults on Base, Ethereum, Arbitrum, and Polygon.
+- **Real-Time Metrics**: View key vault stats like Total Assets, Price Per Share, Idle Funds, and Profit Unlock times.
+- **Strategy Tracking**: List all active strategies with detailed performance metrics (Debt, Utilization, Last Report).
+- **Robust Data Fetching**: Handles missing contract methods gracefully (e.g., for vaults with limited public ABIs).
+- **Optimized RPC Usage**: Uses `multicall` batching to prevent rate limits and ensure fast data loading.
+
+## Tech Stack
+
+- **Framework**: [Next.js 14](https://nextjs.org/) (App Router)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Styling**: [TailwindCSS](https://tailwindcss.com/) & [shadcn/ui](https://ui.shadcn.com/)
+- **Blockchain**: [viem](https://viem.sh/) for type-safe and efficient Ethereum interactions.
+- **Icons**: [Lucide React](https://lucide.dev/)
 
 ## Getting Started
 
-First, run the development server:
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd yearn-v3-monitoring
+   ```
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. **Run the development server**
+   ```bash
+   npm run dev
+   ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+4. **Open the app**
+   Navigate to [http://localhost:3000](http://localhost:3000) in your browser.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Usage
 
-## Learn More
+1. Select a chain from the dropdown (e.g., "Base").
+2. Paste a valid Yearn V3 Vault address (e.g., `0xb13CF163d916917d9cD6E836905cA5f12a1dEF4B`).
+3. Click the search button to load vault data.
 
-To learn more about Next.js, take a look at the following resources:
+## Troubleshooting
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Rate Limits (429)**: The app uses `multicall` to batch requests. If you still encounter rate limits, try switching the RPC URL in `src/lib/chains.ts`.
+- **Missing Data**: Some vaults may not expose all metrics (like `totalIdle`). The app will estimate these values where possible.
