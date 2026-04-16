@@ -21,6 +21,8 @@ type State =
   | { status: "ready"; vault: VaultData; strategies: StrategyData[] }
   | { status: "error"; message: string };
 
+type HolderCount = { status: "loading" } | { status: "ready"; count: number | null };
+
 export default function VaultPage({
   params,
 }: {
@@ -31,6 +33,28 @@ export default function VaultPage({
   const chain = validChain ? (chainParam as ChainKey) : null;
 
   const [state, setState] = useState<State>({ status: "loading" });
+  const [holders, setHolders] = useState<HolderCount>({ status: "loading" });
+
+  useEffect(() => {
+    if (!chain || !isAddress(address)) return;
+    let cancelled = false;
+    setHolders({ status: "loading" });
+    (async () => {
+      try {
+        const res = await fetch(`/api/holders/${chain}/${address}`);
+        const json = await res.json();
+        if (!cancelled) {
+          const count = typeof json.count === "number" ? json.count : null;
+          setHolders({ status: "ready", count });
+        }
+      } catch {
+        if (!cancelled) setHolders({ status: "ready", count: null });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [chain, address]);
 
   useEffect(() => {
     if (!chain) {
@@ -98,7 +122,7 @@ export default function VaultPage({
       {state.status === "loading" && <LoadingSkeleton />}
       {state.status === "ready" && chain && (
         <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <VaultHero data={state.vault} chain={chain} />
+          <VaultHero data={state.vault} chain={chain} holders={holders} />
           <VaultKPIs data={state.vault} strategies={state.strategies} />
           {state.strategies.length > 0 && (
             <>

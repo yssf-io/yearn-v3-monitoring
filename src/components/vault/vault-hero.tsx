@@ -1,4 +1,4 @@
-import { Vault } from "lucide-react";
+import { Users, Vault } from "lucide-react";
 
 import { AddressBadge } from "./address-badge";
 import { ChainBadge } from "./chain-badge";
@@ -7,12 +7,19 @@ import { formatCompact, formatUnitsFixed } from "@/lib/format";
 import type { VaultData } from "@/lib/types";
 import type { ChainKey } from "@/lib/chains";
 
+type HolderCount =
+  | { status: "loading" }
+  | { status: "ready"; count: number | null };
+
 interface VaultHeroProps {
   data: VaultData;
   chain: ChainKey;
+  holders?: HolderCount;
 }
 
-export function VaultHero({ data, chain }: VaultHeroProps) {
+const holdersFormatter = new Intl.NumberFormat("en-US");
+
+export function VaultHero({ data, chain, holders }: VaultHeroProps) {
   const pps = formatUnitsFixed(data.pricePerShare, data.decimals, 6);
 
   return (
@@ -83,10 +90,41 @@ export function VaultHero({ data, chain }: VaultHeroProps) {
                   {formatCompact(data.totalSupply, data.decimals)}
                 </p>
               </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground inline-flex items-center gap-1">
+                  <Users className="size-3" />
+                  Holders
+                </p>
+                <p className="text-sm font-medium tabular-nums">
+                  <HoldersStat holders={holders} />
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
   );
+}
+
+function HoldersStat({ holders }: { holders?: HolderCount }) {
+  if (!holders || holders.status === "loading") {
+    return (
+      <span
+        aria-hidden
+        className="inline-block h-4 w-10 rounded bg-muted animate-pulse align-middle"
+      />
+    );
+  }
+  if (holders.count === null) {
+    return (
+      <span
+        className="text-muted-foreground"
+        title="Holder enumeration requires an Alchemy RPC URL for this chain"
+      >
+        —
+      </span>
+    );
+  }
+  return <>{holdersFormatter.format(holders.count)}</>;
 }
