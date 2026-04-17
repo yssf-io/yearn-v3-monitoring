@@ -21,7 +21,14 @@ type State =
   | { status: "ready"; vault: VaultData; strategies: StrategyData[] }
   | { status: "error"; message: string };
 
-type HolderCount = { status: "loading" } | { status: "ready"; count: number | null };
+export interface ApyData {
+  net: number | null;
+  weeklyNet: number | null;
+  monthlyNet: number | null;
+  inceptionNet: number | null;
+  grossApr: number | null;
+}
+type Apy = { status: "loading" } | { status: "ready"; data: ApyData | null };
 
 export default function VaultPage({
   params,
@@ -33,24 +40,25 @@ export default function VaultPage({
   const chain = validChain ? (chainParam as ChainKey) : null;
 
   const [state, setState] = useState<State>({ status: "loading" });
-  const [holders, setHolders] = useState<HolderCount>({ status: "loading" });
+  const [apy, setApy] = useState<Apy>({ status: "loading" });
 
   useEffect(() => {
     if (!chain || !isAddress(address)) return;
     let cancelled = false;
-    setHolders({ status: "loading" });
+    setApy({ status: "loading" });
+
     (async () => {
       try {
-        const res = await fetch(`/api/holders/${chain}/${address}`);
+        const res = await fetch(`/api/apy/${chain}/${address}`);
         const json = await res.json();
         if (!cancelled) {
-          const count = typeof json.count === "number" ? json.count : null;
-          setHolders({ status: "ready", count });
+          setApy({ status: "ready", data: json.apy ?? null });
         }
       } catch {
-        if (!cancelled) setHolders({ status: "ready", count: null });
+        if (!cancelled) setApy({ status: "ready", data: null });
       }
     })();
+
     return () => {
       cancelled = true;
     };
@@ -122,7 +130,7 @@ export default function VaultPage({
       {state.status === "loading" && <LoadingSkeleton />}
       {state.status === "ready" && chain && (
         <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <VaultHero data={state.vault} chain={chain} holders={holders} />
+          <VaultHero data={state.vault} chain={chain} apy={apy} />
           <VaultKPIs data={state.vault} strategies={state.strategies} />
           {state.strategies.length > 0 && (
             <>

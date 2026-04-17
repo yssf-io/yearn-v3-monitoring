@@ -1,25 +1,40 @@
-import { Users, Vault } from "lucide-react";
+import { Vault } from "lucide-react";
 
 import { AddressBadge } from "./address-badge";
 import { ChainBadge } from "./chain-badge";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { formatCompact, formatUnitsFixed } from "@/lib/format";
 import type { VaultData } from "@/lib/types";
 import type { ChainKey } from "@/lib/chains";
 
-type HolderCount =
-  | { status: "loading" }
-  | { status: "ready"; count: number | null };
+interface ApyData {
+  net: number | null;
+  weeklyNet: number | null;
+  monthlyNet: number | null;
+  inceptionNet: number | null;
+  grossApr: number | null;
+}
+type Apy = { status: "loading" } | { status: "ready"; data: ApyData | null };
 
 interface VaultHeroProps {
   data: VaultData;
   chain: ChainKey;
-  holders?: HolderCount;
+  apy?: Apy;
 }
 
-const holdersFormatter = new Intl.NumberFormat("en-US");
+const pctFormatter = new Intl.NumberFormat("en-US", {
+  style: "percent",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+const pctFormatterCompact = new Intl.NumberFormat("en-US", {
+  style: "percent",
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 2,
+});
 
-export function VaultHero({ data, chain, holders }: VaultHeroProps) {
+export function VaultHero({ data, chain, apy }: VaultHeroProps) {
   const pps = formatUnitsFixed(data.pricePerShare, data.decimals, 6);
 
   return (
@@ -64,16 +79,24 @@ export function VaultHero({ data, chain, holders }: VaultHeroProps) {
             </div>
           </div>
           <div className="space-y-3 text-right min-w-[240px] ml-auto">
-            <div>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                Total Assets
-              </p>
-              <p className="text-3xl font-semibold tabular-nums leading-tight">
-                {formatCompact(data.totalAssets, data.decimals)}{" "}
-                <span className="text-base font-normal text-muted-foreground">
-                  {data.assetSymbol}
-                </span>
-              </p>
+            <div className="flex justify-end items-start gap-8">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Total Assets
+                </p>
+                <p className="text-3xl font-semibold tabular-nums leading-tight">
+                  {formatCompact(data.totalAssets, data.decimals)}{" "}
+                  <span className="text-base font-normal text-muted-foreground">
+                    {data.assetSymbol}
+                  </span>
+                </p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Net APY
+                </p>
+                <ApyHeadline apy={apy} />
+              </div>
             </div>
             <div className="flex justify-end gap-6">
               <div>
@@ -90,15 +113,6 @@ export function VaultHero({ data, chain, holders }: VaultHeroProps) {
                   {formatCompact(data.totalSupply, data.decimals)}
                 </p>
               </div>
-              <div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground inline-flex items-center gap-1">
-                  <Users className="size-3" />
-                  Holders
-                </p>
-                <p className="text-sm font-medium tabular-nums">
-                  <HoldersStat holders={holders} />
-                </p>
-              </div>
             </div>
           </div>
         </div>
@@ -107,24 +121,67 @@ export function VaultHero({ data, chain, holders }: VaultHeroProps) {
   );
 }
 
-function HoldersStat({ holders }: { holders?: HolderCount }) {
-  if (!holders || holders.status === "loading") {
+function ApyHeadline({ apy }: { apy?: Apy }) {
+  if (!apy || apy.status === "loading") {
     return (
-      <span
-        aria-hidden
-        className="inline-block h-4 w-10 rounded bg-muted animate-pulse align-middle"
-      />
+      <>
+        <p
+          aria-hidden
+          className="h-[30px] w-24 rounded bg-muted animate-pulse mt-1"
+        />
+        <p className="mt-1 h-3 w-32 rounded bg-muted animate-pulse" />
+      </>
     );
   }
-  if (holders.count === null) {
+  const data = apy.data;
+  if (!data || data.net === null || data.net === undefined) {
     return (
-      <span
-        className="text-muted-foreground"
-        title="Holder enumeration requires an Alchemy RPC URL for this chain"
+      <>
+        <p
+          className="text-3xl font-semibold tabular-nums leading-tight text-muted-foreground"
+          title="Kong has no APY data for this vault yet — usually means it's new or unindexed"
+        >
+          —
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">Awaiting data</p>
+      </>
+    );
+  }
+  const tone =
+    data.net > 0 ? "text-success" : data.net < 0 ? "text-destructive" : "";
+  return (
+    <>
+      <p
+        className={cn(
+          "text-3xl font-semibold tabular-nums leading-tight",
+          tone
+        )}
       >
-        —
-      </span>
-    );
-  }
-  return <>{holdersFormatter.format(holders.count)}</>;
+        {pctFormatter.format(data.net)}
+      </p>
+      <p className="mt-1.5 text-sm tabular-nums flex justify-end gap-3 text-foreground/80">
+        {data.weeklyNet !== null && (
+          <span>
+            <span className="text-xs uppercase tracking-wider text-muted-foreground mr-1">
+              7d
+            </span>
+            <span className="font-medium">
+              {pctFormatterCompact.format(data.weeklyNet)}
+            </span>
+          </span>
+        )}
+        {data.monthlyNet !== null && (
+          <span>
+            <span className="text-xs uppercase tracking-wider text-muted-foreground mr-1">
+              30d
+            </span>
+            <span className="font-medium">
+              {pctFormatterCompact.format(data.monthlyNet)}
+            </span>
+          </span>
+        )}
+      </p>
+    </>
+  );
 }
+
