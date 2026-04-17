@@ -1,4 +1,5 @@
 import { VaultSearch } from "@/components/vault-search";
+import { VaultHistory } from "@/components/vault-history";
 import { chains } from "@/lib/chains";
 import { Activity, BarChart3, ShieldCheck } from "lucide-react";
 
@@ -27,6 +28,7 @@ export default function Home() {
         <div className="mt-10">
           <VaultSearch autoFocus />
         </div>
+        <VaultHistory />
         <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
           <span className="text-xs text-muted-foreground mr-1">Chains</span>
           {Object.values(chains).map((c) => (

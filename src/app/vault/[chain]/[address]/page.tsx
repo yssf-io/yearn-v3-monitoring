@@ -14,6 +14,7 @@ import { ConfigPanel } from "@/components/vault/config-panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { isChainKey, type ChainKey } from "@/lib/chains";
 import { fetchVaultData } from "@/lib/vault-fetch";
+import { recordVaultVisit } from "@/lib/vault-history";
 import type { StrategyData, VaultData } from "@/lib/types";
 
 type State =
@@ -86,12 +87,20 @@ export default function VaultPage({
     (async () => {
       try {
         const data = await fetchVaultData(chain, address);
-        if (!cancelled)
+        if (!cancelled) {
           setState({
             status: "ready",
             vault: data.vault,
             strategies: data.strategies,
           });
+          recordVaultVisit({
+            chain,
+            address,
+            name: data.vault.name,
+            assetSymbol: data.vault.assetSymbol,
+            viewedAt: Date.now(),
+          });
+        }
       } catch (err) {
         console.error(err);
         if (!cancelled) {
